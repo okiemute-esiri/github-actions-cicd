@@ -1,0 +1,47 @@
+name: Delivery
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: delivery-main
+  cancel-in-progress: false
+
+jobs:
+  release-check:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release context
+        run: |
+          echo "Release candidate accepted"
+          echo "Trigger: ${{ github.event_name }}"
+
+  staging:
+    needs: release-check
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Simulate staging deployment
+        run: |
+          echo "Deploying validated build to staging"
+          echo "No external cloud environment is configured in this portfolio repository."
+
+  production:
+    needs: staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Simulate production promotion
+        run: |
+          echo "Production promotion gate passed"
+          echo "Configure required reviewers on the production GitHub Environment for manual approval."
